@@ -17,7 +17,10 @@ yarn-error.log
 .DS_Store/*
 /.DS_Store
 storage/debugbar
-
+/public/js/*
+/public/mix-manifest.json
+/public/js/app.js
+public/js/app.js
 
 public/js
 public/js/*
