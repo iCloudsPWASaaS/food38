@@ -1,0 +1,284 @@
+php artisan media-library:regenerate
+php artisan media-library:regenerate --ids=73
+just need remebmer for image ite id will be media_id and then media table id will be th folder name in which php artisan media-library:regenerate
+will generate conversions
+
+--------------------
+Step 1
+while read url; do
+  url=$(echo "$url" | sed 's/(/%28/g; s/)/%29/g')
+  path=$(echo "$url" | sed 's|https://[^/]*/||')
+  mkdir -p "downloaded_items_cat/$(dirname "$path")"
+  curl -L "$url" -o "downloaded_items_cat/$path"
+done < urls.txt
+
+
+Step 2 — Rename after download
+find downloaded_items_cat -type f -name "*-thumb.*" -o -name "*-cover.*" -o -name "*-preview.*" | while read file; do
+  newfile=$(echo "$file" | sed 's/-thumb//; s/-cover//; s/-preview//')
+  mv "$file" "$newfile"
+  echo "Renamed: $file → $newfile"
+done
+
+Step 3 — Move images out of conversions subfolders
+# Loop through all 'conversions' folders
+find downloaded_items_cat -type d -name "conversions" | while read folder; do
+  # Move all images in this folder up one level
+  for file in "$folder"/*.*; do
+    mv "$file" "$(dirname "$folder")/"
+  done
+done
+
+all same folder -
+mkdir -p downloaded_items_cat
+
+while IFS= read -r url; do
+  if [ -n "$url" ]; then
+    clean_url=$(echo "$url" | sed 's/\r//g')
+    filename=$(basename "$clean_url")
+
+    echo "Downloading: $filename"
+
+    curl -L --ssl-no-revoke "$clean_url" -o "downloaded_items_cat/$filename"
+  fi
+done < urls.txt
+
+----------------
+
+public function getCoverAttribute(): string
+{
+    $media = $this->getMedia('item')->last();
+
+    if (!$media) {
+        return ''; // No media attached
+    }
+
+    // Get full URL or path of the cover conversion
+    $path = $media->getPath(); // local storage path
+    // or use getUrl('cover') if you want URL
+
+    // Extract file name only
+    return basename($path);
+}
+
+---------------- extra hold 
+
+1. Hold Order Button (Line 18–22)
+html<button @click.prevent="openHoldOrdersModal"
+    class="flex items-center gap-2 capitalize text-sm font-medium py-2 px-4 rounded-lg text-white bg-[#008BBA]">
+    <i class="lab lab-clock"></i>
+    <span>HOLD ORDERS ({{ holdOrders.length }})</span>
+</button>
+
+2. Hold Orders Modal (Lines 453–504)
+html<div id="holdOrdersModal" class="modal">
+    <div class="modal-dialog max-w-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">HOLD ORDERS</h2>
+                <button type="button" class="btn-close modal-close" @click="closeHoldOrdersModal">
+                    <i class="lab lab-close"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div v-if="holdOrders.length === 0" class="text-center py-8">
+                    <p>No held orders</p>
+                </div>
+                <div v-else class="max-h-96 overflow-y-auto">
+                    <table class="table table-hover table-bordered">
+                        <thead>
+                            <tr class="table-light">
+                                <th class="align-middle" style="width: 20%">Customer</th>
+                                <th class="text-center align-middle" style="width: 10%">Items</th>
+                                <th class="text-right align-middle" style="width: 15%">Total</th>
+                                <th class="text-center align-middle" style="width: 15%">Token</th>
+                                <th class="text-center align-middle" style="width: 15%">Time</th>
+                                <th class="text-center align-middle" style="width: 25%">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="order in holdOrders" :key="order.id">
+                                <td class="align-middle">{{ order.customerName || $t('label.walk_in') }}</td>
+                                <td class="text-center align-middle">{{ order.items.reduce((sum, item) => sum + item.quantity, 0) }}</td>
+                                <td class="text-right align-middle">{{ currencyFormat(order.subtotal - order.discount, setting.site_digit_after_decimal_point, setting.site_default_currency_symbol, setting.site_currency_position) }}</td>
+                                <td class="text-center align-middle">{{ order.token || '-' }}</td>
+                                <td class="text-center align-middle">{{ formatTime(order.timestamp) }}</td>
+                                <td class="text-center align-middle">
+                                    <div class="d-flex justify-content-center gap-2">
+                                        <button @click.prevent="loadHoldOrder(order.id)" class="btn btn-primary btn-sm">
+                                            <i class="lab lab-edit lab-font-size-17 mr-1"></i>
+                                            
+                                        </button>
+                                        <!-- <button @click.prevent="deleteHoldOrder(order.id)" class="btn btn-danger btn-sm">
+                                            <i class="lab lab-trash lab-font-size-17 mr-1"></i>
+                                            
+                                        </button> -->
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+3. Data Properties (Lines 640–641)
+jsholdOrders: [],
+currentHoldOrderId: null,
+
+4. All Hold Order Methods
+jsholdOrder: function () {
+    if (this.carts.length === 0) {
+        return alertService.error("Cart empty");
+    }
+    
+    // Create a unique ID for this held order
+    const orderId = 'hold_' + Date.now();
+    
+    // Save the complete order details
+    const heldOrder = {
+        id: orderId,
+        timestamp: Date.now(),
+        items: JSON.parse(JSON.stringify(this.carts)), // Deep copy of cart items with all details
+        customer: this.checkoutProps.form.customer_id,
+        customerName: this.customers.find(c => c.id === this.checkoutProps.form.customer_id)?.name || '',
+        token: this.checkoutProps.form.token,
+        table: this.checkoutProps.form.dining_table_id,
+        tableName: this.diningtables.find(t => t.id === this.checkoutProps.form.dining_table_id)?.name || '',
+        orderType: this.checkoutProps.form.order_type,
+        discount: this.discount,
+        discountType: this.discountType,
+        address: this.checkoutProps.form.address_id,
+        subtotal: this.subtotal,
+        deliveryCharge: this.checkoutProps.form.delivery_charge
+    };
+    
+    // Get existing held orders or initialize empty array
+    let existingOrders = [];
+    try {
+        const savedOrders = localStorage.getItem('foodking_held_orders');
+        if (savedOrders) {
+            existingOrders = JSON.parse(savedOrders);
+        }
+    } catch (e) {
+        console.error('Error loading held orders', e);
+    }
+    
+    // Add new held order
+    existingOrders.push(heldOrder);
+    
+    // Save back to localStorage
+    localStorage.setItem('foodking_held_orders', JSON.stringify(existingOrders));
+    
+    // Reset the cart
+    this.resetCart();
+    
+    alertService.success("Order hold successfully");
+},
+
+openHoldOrdersModal: function () {
+    // Load held orders from localStorage
+    this.loadHeldOrders();
+    
+    // Filter to show only today's orders
+    this.filterTodayOrders();
+    
+    // Open the modal
+    appService.modalShow('#holdOrdersModal');
+},
+
+loadHeldOrders: function () {
+    try {
+        const savedOrders = localStorage.getItem('foodking_held_orders');
+        if (savedOrders) {
+            this.holdOrders = JSON.parse(savedOrders);
+        } else {
+            //this.holdOrders = [];
+        }
+    } catch (e) {
+        console.error('Error loading held orders', e);
+        this.holdOrders = [];
+    }
+},
+
+filterTodayOrders: function () {
+    // Get today's date at midnight for comparison
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    // Filter orders from today only
+    this.holdOrders = this.holdOrders.filter(order => {
+        const orderDate = new Date(order.timestamp);
+        return orderDate >= today;
+    });
+    
+    // Save filtered list back to localStorage
+    localStorage.setItem('foodking_held_orders', JSON.stringify(this.holdOrders));
+},
+
+loadHoldOrder: function (orderId) {
+    // Find the order in the held orders list
+    const orderIndex = this.holdOrders.findIndex(order => order.id === orderId);
+    if (orderIndex === -1) return;
+    
+    const order = this.holdOrders[orderIndex];
+
+    // Store the current hold order ID
+    this.currentHoldOrderId = orderId;
+    
+    // First reset the current cart
+    this.$store.dispatch('posCart/resetCart').then(() => {
+        // Restore cart items with all details
+        this.$store.dispatch('posCart/lists', order.items).then(() => {
+            // Restore customer, token, table, etc.
+            this.checkoutProps.form.customer_id = order.customer;
+            this.checkoutProps.form.token = order.token;
+            this.checkoutProps.form.dining_table_id = order.table;
+            this.checkoutProps.form.order_type = order.orderType;
+            this.checkoutProps.form.address_id = order.address;
+            this.checkoutProps.form.delivery_charge = order.deliveryCharge;
+            
+            // Restore discount
+            this.discount = order.discount;
+            this.discountType = order.discountType;
+            if (order.discount > 0) {
+                this.applyDiscount();
+            }
+            
+            // If order has a customer, load their addresses
+            if (order.customer) {
+                this.gettingUserAddress(order.customer);
+            }
+            
+            // Remove the order from held orders
+            //this.holdOrders.splice(orderIndex, 1);
+            //localStorage.setItem('foodking_held_orders', JSON.stringify(this.holdOrders));
+            
+            // Close the modal
+            appService.modalHide('#holdOrdersModal');
+            
+            alertService.success("Order loaded successfully");
+        });
+    });
+},
+
+deleteHoldOrder: function (orderId) {
+    // Find and remove the order
+    const orderIndex = this.holdOrders.findIndex(order => order.id === orderId);
+    if (orderIndex !== -1) {
+        this.holdOrders.splice(orderIndex, 1);
+        localStorage.setItem('foodking_held_orders', JSON.stringify(this.holdOrders));
+        alertService.success(this.$t('message.order_deleted_successfully'));
+    }
+},
+
+formatTime: function (timestamp) {
+    const date = new Date(timestamp);
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+},
+
+closeHoldOrdersModal: function() {
+    appService.modalHide('#holdOrdersModal');
+},
