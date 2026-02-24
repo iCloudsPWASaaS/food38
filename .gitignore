@@ -13,12 +13,16 @@ yarn-error.log
 .DS_Store
 .DS_Store/*
 /.DS_Store
-storage/debugbar
+
+storage/logs/
+storage/framework/
+storage/debugbar/
+storage/media-library/
+storage2/*
 
 package-lock.json
 _ide_helper.php
 _ide_helper_models.php
-storage/media-library/
 
 public/file/service-account-file.json
 database/seeders/PaymentGatewayDataTableSeeder.php
