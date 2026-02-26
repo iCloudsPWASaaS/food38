@@ -3,7 +3,7 @@
 // ============================
 // CONFIG — change these!
 // ============================
-define('SECRET', 'your-secret-password');
+define('SECRET', 'Moon007!');
 define('BASE',    dirname(__DIR__));
 
 // ============================
