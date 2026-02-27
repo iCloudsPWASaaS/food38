@@ -25,39 +25,36 @@ if (isset($_GET['logout'])) {
     exit;
 }
 
-if (!isset($_SESSION['devpanel_auth'])) {
-    ?>
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <title>DevPanel Login</title>
-        <style>
-            * { margin:0;padding:0;box-sizing:border-box; }
-            body { background:#0d1117;display:flex;justify-content:center;align-items:center;height:100vh;font-family:monospace; }
-            .box { background:#161b22;border:1px solid #30363d;border-radius:10px;padding:40px;width:320px;display:flex;flex-direction:column;gap:16px; }
-            h2 { color:#c9d1d9;text-align:center; }
-            input[type=password] { background:#0d1117;border:1px solid #30363d;color:#c9d1d9;padding:10px;border-radius:6px;font-size:14px;width:100%; }
-            button { background:#238636;color:#fff;border:none;padding:10px;border-radius:6px;cursor:pointer;font-size:14px; }
-            button:hover { background:#2ea043; }
-            .error { color:#f85149;font-size:13px;text-align:center; }
-        </style>
-    </head>
-    <body>
-        <div class="box">
-            <h2>🔒 DevPanel</h2>
-            <?php if (!empty($authError)) echo "<div class='error'>{$authError}</div>"; ?>
-            <form method="POST">
-                <div style="display:flex;flex-direction:column;gap:10px;">
-                    <input type="password" name="auth_password" placeholder="Enter password" autofocus />
-                    <button type="submit">Login</button>
-                </div>
-            </form>
-        </div>
-    </body>
-    </html>
-    <?php
-    exit;
-}
+if (!isset($_SESSION['devpanel_auth'])) { ?>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>DevPanel Login</title>
+    <style>
+        * { margin:0;padding:0;box-sizing:border-box; }
+        body { background:#0d1117;display:flex;justify-content:center;align-items:center;height:100vh;font-family:monospace; }
+        .box { background:#161b22;border:1px solid #30363d;border-radius:10px;padding:40px;width:320px;display:flex;flex-direction:column;gap:16px; }
+        h2 { color:#c9d1d9;text-align:center; }
+        input[type=password] { background:#0d1117;border:1px solid #30363d;color:#c9d1d9;padding:10px;border-radius:6px;font-size:14px;width:100%; }
+        button { background:#238636;color:#fff;border:none;padding:10px;border-radius:6px;cursor:pointer;font-size:14px; }
+        button:hover { background:#2ea043; }
+        .error { color:#f85149;font-size:13px;text-align:center; }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <h2>🔒 DevPanel</h2>
+        <?php if (!empty($authError)) echo "<div class='error'>{$authError}</div>"; ?>
+        <form method="POST">
+            <div style="display:flex;flex-direction:column;gap:10px;">
+                <input type="password" name="auth_password" placeholder="Enter password" autofocus />
+                <button type="submit">Login</button>
+            </div>
+        </form>
+    </div>
+</body>
+</html>
+<?php exit; }
 
 // ============================
 // API HANDLERS
@@ -74,9 +71,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['api'])) {
             ob_start();
             try {
                 require BASE . '/vendor/autoload.php';
-                $app     = require BASE . '/bootstrap/app.php';
-                $kernel  = $app->make(Illuminate\Contracts\Console\Kernel::class);
-                $output  = new Symfony\Component\Console\Output\BufferedOutput;
+                $app    = require BASE . '/bootstrap/app.php';
+                $kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
+                $output = new Symfony\Component\Console\Output\BufferedOutput;
                 $kernel->call($cmd, [], $output);
                 echo $output->fetch();
                 $status = 'success';
@@ -86,74 +83,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['api'])) {
             }
             $out = ob_get_clean();
             echo json_encode(['output' => $out ?: '(no output)', 'status' => $status]);
-            break;
-
-        // --- .env Read ---
-        case 'env_read':
-            echo json_encode(['env' => file_get_contents(BASE . '/.env')]);
-            break;
-
-        // --- .env Write ---
-        case 'env_write':
-            file_put_contents(BASE . '/.env', $body['content']);
-            shell_exec('php ' . BASE . '/artisan config:clear 2>&1');
-            echo json_encode(['status' => 'success', 'message' => '.env saved & config cleared!']);
-            break;
-
-        // --- Permissions Read ---
-        case 'perms_read':
-            $paths = [
-                'storage/app'       => BASE . '/storage/app',
-                'storage/framework' => BASE . '/storage/framework',
-                'storage/logs'      => BASE . '/storage/logs',
-                'bootstrap/cache'   => BASE . '/bootstrap/cache',
-                '.env'              => BASE . '/.env',
-                'public'            => BASE . '/public',
-            ];
-            $result = [];
-            foreach ($paths as $label => $path) {
-                $result[] = [
-                    'path'     => $label,
-                    'perms'    => file_exists($path) ? substr(sprintf('%o', fileperms($path)), -4) : 'N/A',
-                    'owner'    => file_exists($path) ? (function_exists('posix_getpwuid') ? posix_getpwuid(fileowner($path))['name'] : fileowner($path)) : 'N/A',
-                    'writable' => is_writable($path),
-                ];
-            }
-            echo json_encode($result);
-            break;
-
-        // --- Permissions Write ---
-        case 'perms_write':
-            $allowed = [
-                'storage'         => BASE . '/storage',
-                'bootstrap/cache' => BASE . '/bootstrap/cache',
-                '.env'            => BASE . '/.env',
-                'public'          => BASE . '/public',
-            ];
-            $target = $body['target'];
-            $mode   = octdec($body['mode']);
-            if (!array_key_exists($target, $allowed)) {
-                echo json_encode(['status' => 'error', 'message' => 'Path not allowed!']);
-                break;
-            }
-            $path = $allowed[$target];
-            if ($body['recursive'] && is_dir($path)) {
-                $it = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($path, RecursiveDirectoryIterator::SKIP_DOTS));
-                foreach ($it as $item) chmod($item->getPathname(), $mode);
-            }
-            chmod($path, $mode);
-            echo json_encode(['status' => 'success', 'message' => "chmod {$body['mode']} applied to {$target}"]);
-            break;
-
-        // --- Permissions Fix ---
-        case 'perms_fix':
-            $storage   = BASE . '/storage';
-            $bootstrap = BASE . '/bootstrap/cache';
-            $it = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($storage, RecursiveDirectoryIterator::SKIP_DOTS));
-            foreach ($it as $item) chmod($item->getPathname(), 0775);
-            chmod($storage, 0775);
-            chmod($bootstrap, 0775);
-            echo json_encode(['status' => 'success', 'message' => '✅ storage/ and bootstrap/cache set to 775']);
             break;
 
         // --- Shell ---
@@ -167,12 +96,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['api'])) {
                     exit;
                 }
             }
-            $output = shell_exec("cd " . escapeshellarg($cwd) . " && " . $cmd . " 2>&1");
             $newCwd = $cwd;
-            if (preg_match('/^\s*cd\s+(.+)/', $cmd, $m)) {
-                $resolved = realpath($cwd . '/' . trim($m[1]));
-                if ($resolved && is_dir($resolved)) $newCwd = $resolved;
+            if (preg_match('/^\s*cd\s*(.*)?$/', trim($cmd), $m)) {
+                $target   = trim($m[1] ?? '');
+                $resolved = $target ? (realpath($cwd . '/' . $target) ?: realpath($target)) : BASE;
+                $newCwd   = ($resolved && is_dir($resolved)) ? $resolved : $cwd;
+                echo json_encode(['output' => '', 'cwd' => $newCwd, 'status' => 'success']);
+                break;
             }
+            $output = shell_exec("cd " . escapeshellarg($cwd) . " && " . $cmd . " 2>&1");
             echo json_encode(['output' => $output ?: '(no output)', 'cwd' => $newCwd, 'status' => 'success']);
             break;
 
@@ -186,24 +118,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['api'])) {
                     exit;
                 }
             }
-            $output = shell_exec('docker ' . $cmd . ' 2>&1');
+            $output = shell_exec('sudo docker ' . $cmd . ' 2>&1');
             echo json_encode(['output' => $output ?: '(no output)', 'status' => 'success']);
             break;
 
         // --- Docker Containers ---
         case 'docker_containers':
-            $output = shell_exec('docker ps -a --format "{{json .}}" 2>&1');
-            $lines  = array_filter(explode("\n", trim($output)));
+            $output     = shell_exec("sudo docker ps -a --format '{{json .}}' 2>&1");
+            $lines      = array_filter(explode("\n", trim($output)));
             $containers = array_map(fn($l) => json_decode($l, true), $lines);
             echo json_encode(['containers' => array_values(array_filter($containers))]);
             break;
 
         // --- Docker Action ---
         case 'docker_action':
-            $action = $body['action'];
-            $id     = $body['container_id'];
+            $action  = $body['action'];
+            $id      = $body['container_id'];
             $allowed = ['start', 'stop', 'restart', 'logs --tail=100', 'inspect', 'stats --no-stream'];
-            $ok = false;
+            $ok      = false;
             foreach ($allowed as $a) {
                 if (str_starts_with($action, explode(' ', $a)[0])) { $ok = true; break; }
             }
@@ -211,7 +143,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['api'])) {
                 echo json_encode(['output' => '🚫 Not allowed!', 'status' => 'error']);
                 exit;
             }
-            $output = shell_exec("docker {$action} {$id} 2>&1");
+            $output = shell_exec("sudo docker {$action} {$id} 2>&1");
             echo json_encode(['output' => $output ?: '(no output)', 'status' => 'success']);
             break;
     }
@@ -227,7 +159,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['api'])) {
         * { margin:0;padding:0;box-sizing:border-box; }
         body { background:#0d1117;color:#c9d1d9;font-family:'Courier New',monospace;height:100vh;display:flex;flex-direction:column;overflow:hidden; }
         #tabs { display:flex;background:#161b22;border-bottom:1px solid #30363d;flex-shrink:0;overflow-x:auto; }
-        .tab { padding:10px 20px;cursor:pointer;color:#8b949e;font-size:13px;border-bottom:2px solid transparent;white-space:nowrap; }
+        .tab { padding:10px 24px;cursor:pointer;color:#8b949e;font-size:13px;border-bottom:2px solid transparent;white-space:nowrap; }
         .tab.active { color:#c9d1d9;border-bottom:2px solid #238636; }
         .tab:hover { color:#c9d1d9; }
         .panel { display:none;flex:1;flex-direction:column;overflow:hidden;min-height:0; }
@@ -238,28 +170,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['api'])) {
         .btn { border:none;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:13px;color:#fff; }
         .btn-green { background:#238636; } .btn-green:hover { background:#2ea043; }
         .btn-blue  { background:#1f6feb; } .btn-blue:hover  { background:#388bfd; }
-        .btn-gray  { background:#21262d;color:#c9d1d9;border:1px solid #30363d; }
-        .btn-gray:hover { background:#30363d; }
+        .btn-gray  { background:#21262d;color:#c9d1d9;border:1px solid #30363d; } .btn-gray:hover { background:#30363d; }
         .toolbar { display:flex;gap:6px;padding:8px 14px;background:#161b22;border-bottom:1px solid #30363d;flex-wrap:wrap;flex-shrink:0; }
         .quick { background:#21262d;color:#c9d1d9;border:1px solid #30363d;padding:3px 9px;border-radius:4px;cursor:pointer;font-size:11px;font-family:'Courier New',monospace; }
         .quick:hover { background:#30363d; }
-        .s-ok  { color:#3fb950; }
-        .s-err { color:#f85149; }
-        .s-cmd { color:#58a6ff; }
-        .s-info{ color:#8b949e; }
-
-        /* env panel */
-        #env-panel { padding:16px;gap:12px; }
-        #env-editor { flex:1;background:#0d1117;color:#c9d1d9;border:1px solid #30363d;border-radius:6px;padding:12px;font-family:'Courier New',monospace;font-size:12px;resize:none;min-height:0; }
-
-        /* perms panel */
-        .perm-table { width:100%;border-collapse:collapse;font-size:12px; }
-        .perm-table th { color:#8b949e;text-align:left;padding:8px 12px;border-bottom:1px solid #30363d; }
-        .perm-table td { padding:8px 12px;border-bottom:1px solid #21262d; }
-        .perm-controls { padding:12px 14px;border-bottom:1px solid #30363d;display:flex;gap:10px;align-items:center;flex-wrap:wrap;flex-shrink:0;background:#161b22; }
-        select { background:#0d1117;color:#c9d1d9;border:1px solid #30363d;padding:5px 8px;border-radius:6px;font-size:12px; }
-
-        /* docker panel */
+        .s-ok   { color:#3fb950; }
+        .s-err  { color:#f85149; }
+        .s-cmd  { color:#58a6ff; }
+        .s-info { color:#8b949e; }
         .container-card { display:flex;align-items:center;gap:10px;background:#161b22;padding:8px 12px;border-radius:6px;border:1px solid #30363d;flex-wrap:wrap;font-size:12px; }
         .daction { color:#fff;border:none;padding:2px 8px;border-radius:4px;cursor:pointer;font-size:11px; }
         .daction:hover { opacity:0.85; }
@@ -267,13 +185,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['api'])) {
 </head>
 <body>
 
-<!-- Tabs -->
 <div id="tabs">
-    <div class="tab active"  onclick="switchTab('artisan')">⚡ Artisan</div>
-    <div class="tab"         onclick="switchTab('env')">⚙️ .env</div>
-    <div class="tab"         onclick="switchTab('perms')">🔒 Perms</div>
-    <div class="tab"         onclick="switchTab('shell')">💻 Shell</div>
-    <div class="tab"         onclick="switchTab('docker')">🐳 Docker</div>
+    <div class="tab active" onclick="switchTab('artisan')">⚡ Artisan</div>
+    <div class="tab"        onclick="switchTab('shell')">💻 Shell</div>
+    <div class="tab"        onclick="switchTab('docker')">🐳 Docker</div>
     <div style="margin-left:auto;padding:10px 14px;flex-shrink:0;">
         <a href="?logout" style="color:#f85149;font-size:12px;text-decoration:none;">Logout</a>
     </div>
@@ -294,55 +209,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['api'])) {
         <button class="quick" data-tab="artisan" data-cmd="optimize:clear">optimize:clear</button>
         <button class="quick" data-tab="artisan" data-cmd="about">about</button>
     </div>
-    <div id="artisan-output" class="output"><span class="s-info">⚡ Artisan ready. Type any artisan command below.
+    <div id="artisan-output" class="output"><span class="s-info">⚡ Artisan ready.
 </span></div>
     <div class="input-bar">
         <span style="color:#3fb950;white-space:nowrap;">php artisan $</span>
         <input id="artisan-cmd" type="text" placeholder="migrate, make:model Post, route:list ..." autocomplete="off" />
         <button class="btn btn-green" onclick="runArtisan()">Run</button>
         <button class="btn btn-gray"  onclick="clearOutput('artisan-output')">Clear</button>
-    </div>
-</div>
-
-<!-- ⚙️ .env Panel -->
-<div id="env-panel" class="panel" style="padding:16px;gap:12px;">
-    <div style="display:flex;gap:10px;align-items:center;flex-shrink:0;">
-        <button class="btn btn-green" onclick="saveEnv()">💾 Save .env</button>
-        <button class="btn btn-gray"  onclick="loadEnv()">🔄 Reload</button>
-        <span id="env-msg" style="font-size:12px;"></span>
-    </div>
-    <textarea id="env-editor" spellcheck="false"></textarea>
-</div>
-
-<!-- 🔒 Perms Panel -->
-<div id="perms-panel" class="panel" style="flex-direction:column;">
-    <div class="perm-controls">
-        <button class="btn btn-green" onclick="fixPerms()">⚡ Fix Laravel Perms</button>
-        <button class="btn btn-gray"  onclick="loadPerms()">🔄 Refresh</button>
-        <select id="perm-target">
-            <option value="storage">storage/</option>
-            <option value="bootstrap/cache">bootstrap/cache</option>
-            <option value=".env">.env</option>
-            <option value="public">public/</option>
-        </select>
-        <select id="perm-mode">
-            <option value="775">775</option>
-            <option value="755">755</option>
-            <option value="777">777</option>
-            <option value="644">644</option>
-            <option value="600">600</option>
-        </select>
-        <label style="font-size:12px;display:flex;align-items:center;gap:4px;">
-            <input type="checkbox" id="perm-recursive" checked /> Recursive
-        </label>
-        <button class="btn btn-blue" onclick="applyChmod()">Apply chmod</button>
-        <span id="perm-msg" style="font-size:12px;"></span>
-    </div>
-    <div style="overflow-y:auto;flex:1;">
-        <table class="perm-table">
-            <thead><tr><th>Path</th><th>Perms</th><th>Owner</th><th>Writable</th></tr></thead>
-            <tbody id="perm-tbody"></tbody>
-        </table>
     </div>
 </div>
 
@@ -398,7 +271,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['api'])) {
 </span></div>
     <div class="input-bar">
         <span style="color:#1d6fa4;white-space:nowrap;">docker $</span>
-        <input id="docker-cmd" type="text" placeholder="ps, logs app, exec -it app bash ..." autocomplete="off" />
+        <input id="docker-cmd" type="text" placeholder="ps, logs app, exec app php artisan migrate ..." autocomplete="off" />
         <button class="btn btn-blue" onclick="runDocker()">Run</button>
         <button class="btn btn-gray"  onclick="clearOutput('docker-output')">Clear</button>
     </div>
@@ -407,19 +280,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['api'])) {
 <script>
 const BASE_URL = 'devpanel.php';
 
-// =====================
-// Utilities
-// =====================
 function api(endpoint, data) {
     return fetch(BASE_URL + '?api=' + endpoint, {
-        method: data !== undefined ? 'POST' : 'GET',
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: data !== undefined ? JSON.stringify(data) : null
+        body: JSON.stringify(data || {})
     }).then(r => r.json());
 }
 
-function append(outputId, text, cls) {
-    const out  = document.getElementById(outputId);
+function append(id, text, cls) {
+    const out  = document.getElementById(id);
     const span = document.createElement('span');
     span.className   = cls;
     span.textContent = text + '\n';
@@ -427,34 +297,18 @@ function append(outputId, text, cls) {
     out.scrollTop = out.scrollHeight;
 }
 
-function clearOutput(id) {
-    document.getElementById(id).innerHTML = '';
-}
+function clearOutput(id) { document.getElementById(id).innerHTML = ''; }
 
-function showMsg(id, text, ok) {
-    const el = document.getElementById(id);
-    el.textContent = text;
-    el.style.color = ok ? '#3fb950' : '#f85149';
-}
-
-// =====================
-// Tab Switching
-// =====================
 function switchTab(tab) {
-    const names = ['artisan','env','perms','shell','docker'];
+    const names = ['artisan', 'shell', 'docker'];
     document.querySelectorAll('.tab').forEach((t, i) => {
         t.classList.toggle('active', names[i] === tab);
     });
     document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
     document.getElementById(tab + '-panel').classList.add('active');
-    if (tab === 'env')    loadEnv();
-    if (tab === 'perms')  loadPerms();
     if (tab === 'docker') loadContainers();
 }
 
-// =====================
-// Command History Helper
-// =====================
 function makeHistory(inputId) {
     const h = { list: [], idx: -1 };
     document.getElementById(inputId).addEventListener('keydown', function(e) {
@@ -473,126 +327,58 @@ const artisanHist = makeHistory('artisan-cmd');
 const shellHist   = makeHistory('shell-cmd');
 const dockerHist  = makeHistory('docker-cmd');
 
-// =====================
 // ⚡ Artisan
-// =====================
 async function runArtisan(cmd) {
     const input   = document.getElementById('artisan-cmd');
     const command = cmd !== undefined ? cmd : input.value.trim();
     if (!command) return;
-    artisanHist.list.unshift(command);
-    artisanHist.idx = -1;
+    artisanHist.list.unshift(command); artisanHist.idx = -1;
     append('artisan-output', 'php artisan ' + command, 's-cmd');
     if (cmd === undefined) input.value = '';
     const data = await api('artisan', { command });
     append('artisan-output', data.output, data.status === 'success' ? 's-ok' : 's-err');
     input.focus();
 }
+document.getElementById('artisan-cmd').addEventListener('keydown', e => { if (e.key === 'Enter') runArtisan(); });
 
-document.getElementById('artisan-cmd').addEventListener('keydown', function(e) {
-    if (e.key === 'Enter') runArtisan();
-});
-
-// =====================
-// ⚙️ .env
-// =====================
-async function loadEnv() {
-    const data = await api('env_read');
-    document.getElementById('env-editor').value = data.env;
-}
-
-async function saveEnv() {
-    const content = document.getElementById('env-editor').value;
-    showMsg('env-msg', 'Saving...', true);
-    const data = await api('env_write', { content });
-    showMsg('env-msg', data.message, data.status === 'success');
-}
-
-// =====================
-// 🔒 Permissions
-// =====================
-async function loadPerms() {
-    const data  = await api('perms_read');
-    const tbody = document.getElementById('perm-tbody');
-    tbody.innerHTML = '';
-    data.forEach(function(r) {
-        const tr = document.createElement('tr');
-        tr.innerHTML =
-            '<td style="color:#58a6ff;">' + r.path + '</td>' +
-            '<td>' + r.perms + '</td>' +
-            '<td>' + r.owner + '</td>' +
-            '<td style="color:' + (r.writable ? '#3fb950' : '#f85149') + '">' + (r.writable ? '✅ Yes' : '❌ No') + '</td>';
-        tbody.appendChild(tr);
-    });
-}
-
-async function fixPerms() {
-    showMsg('perm-msg', 'Fixing...', true);
-    const data = await api('perms_fix', {});
-    showMsg('perm-msg', data.message, data.status === 'success');
-    loadPerms();
-}
-
-async function applyChmod() {
-    const data = await api('perms_write', {
-        target    : document.getElementById('perm-target').value,
-        mode      : document.getElementById('perm-mode').value,
-        recursive : document.getElementById('perm-recursive').checked,
-    });
-    showMsg('perm-msg', data.message, data.status === 'success');
-    loadPerms();
-}
-
-// =====================
 // 💻 Shell
-// =====================
-var shellCwd = '<?= addslashes(dirname(__DIR__)) ?>';
+var shellCwd = '<?= addslashes(BASE) ?>';
 
 async function runShell(cmd) {
     const input   = document.getElementById('shell-cmd');
     const command = cmd !== undefined ? cmd : input.value.trim();
     if (!command) return;
-    shellHist.list.unshift(command);
-    shellHist.idx = -1;
+    shellHist.list.unshift(command); shellHist.idx = -1;
     append('shell-output', shellCwd + ' $ ' + command, 's-cmd');
     if (cmd === undefined) input.value = '';
     const data = await api('shell', { command: command, cwd: shellCwd });
     shellCwd = data.cwd;
     document.getElementById('shell-prompt').textContent = shellCwd + ' $ ';
-    append('shell-output', data.output, 's-ok');
+    if (data.output) append('shell-output', data.output, 's-ok');
     input.focus();
 }
+document.getElementById('shell-cmd').addEventListener('keydown', e => { if (e.key === 'Enter') runShell(); });
 
-document.getElementById('shell-cmd').addEventListener('keydown', function(e) {
-    if (e.key === 'Enter') runShell();
-});
-
-// =====================
 // 🐳 Docker
-// =====================
 async function runDocker(cmd) {
     const input   = document.getElementById('docker-cmd');
     const command = cmd !== undefined ? cmd : input.value.trim();
     if (!command) return;
-    dockerHist.list.unshift(command);
-    dockerHist.idx = -1;
+    dockerHist.list.unshift(command); dockerHist.idx = -1;
     append('docker-output', 'docker ' + command, 's-cmd');
     if (cmd === undefined) input.value = '';
     const data = await api('docker', { command: command });
     append('docker-output', data.output, data.status === 'success' ? 's-ok' : 's-err');
     input.focus();
 }
-
-document.getElementById('docker-cmd').addEventListener('keydown', function(e) {
-    if (e.key === 'Enter') runDocker();
-});
+document.getElementById('docker-cmd').addEventListener('keydown', e => { if (e.key === 'Enter') runDocker(); });
 
 async function loadContainers() {
     const list = document.getElementById('container-list');
     list.innerHTML = '<span style="color:#8b949e;font-size:12px;">Loading...</span>';
     const data = await api('docker_containers');
     if (!data.containers || !data.containers.length) {
-        list.innerHTML = '<span style="color:#8b949e;font-size:12px;">No containers found or Docker not available.</span>';
+        list.innerHTML = '<span style="color:#f85149;font-size:12px;">No containers found or Docker not accessible.</span>';
         return;
     }
     list.innerHTML = '';
@@ -626,9 +412,6 @@ async function cAction(action, id) {
     }
 }
 
-// =====================
-// Quick buttons (all tabs)
-// =====================
 document.querySelectorAll('.quick[data-tab]').forEach(function(btn) {
     btn.addEventListener('click', function() {
         var tab = btn.dataset.tab;
