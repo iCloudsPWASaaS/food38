@@ -66,7 +66,8 @@
     @endif
 
     <script>
-        const APP_URL = "{{ env('MIX_HOST') }}";
+        //const APP_URL = "{{ env('MIX_HOST') }}";
+        const APP_URL = "{{ rtrim(request()->schemeAndHttpHost(), '/') }}"; //extra
         const APP_KEY = "{{ env('MIX_API_KEY') }}";
         const GOOGLE_TOKEN = "{{ env('MIX_GOOGLE_MAP_KEY') }}";
         const APP_DEMO = "{{ env('MIX_DEMO') }}";

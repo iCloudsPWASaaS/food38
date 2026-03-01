@@ -301,3 +301,22 @@ SimpleItemResource.php
 ItemService.php
 ItemCreateComponent.vue
 ItemListComponent.vue
+
+-------------------------------
+Option B: If you only need to fix the latest commit
+bash# Remove the file from tracking
+git rm --cached public/storage/125/service-account-file.json
+
+# Add to .gitignore
+echo "public/storage/125/service-account-file.json" >> .gitignore
+echo "service-account-file.json" >> .gitignore
+
+# Amend the commit
+git commit --amend --no-edit
+
+git push origin main --force
+Step 3: Add to .gitignore permanently
+gitignore# Service account credentials
+*service-account*.json
+*credentials*.json
+/public/storage/
