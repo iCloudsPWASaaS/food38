@@ -19,6 +19,7 @@ class Item extends Model implements HasMedia
     protected $fillable = [
         'name',
         'item_category_id',
+        'item_sub_category_id', //extra
         'slug',
         'tax_id',
         'item_type',
@@ -34,6 +35,7 @@ class Item extends Model implements HasMedia
         'id'               => 'integer',
         'name'             => 'string',
         'item_category_id' => 'integer',
+        'item_sub_category_id' => 'integer', //extra
         'slug'             => 'string',
         'tax_id'           => 'integer',
         'item_type'        => 'integer',
@@ -112,5 +114,11 @@ class Item extends Model implements HasMedia
     public function offer(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
     {
         return $this->belongsToMany(Offer::class, 'offer_items');
+    }
+
+    //extra sub categories
+    public function subCategory(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(ItemCategory::class, 'item_sub_category_id', 'id');
     }
 }

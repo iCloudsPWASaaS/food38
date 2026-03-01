@@ -43,6 +43,11 @@ import NotificationAlertComponent from "../../components/admin/settings/Notifica
 import KioskMachineComponent from "../../components/admin/settings/KioskMachine/KioskMachineComponent.vue";
 import KioskMachineListComponent from "../../components/admin/settings/KioskMachine/KioskMachineListComponent.vue";
 
+//extra
+import PrinterSettingComponent from "../../components/admin/settings/PrinterSettingComponent.vue";
+
+
+
 export default [
     {
         path: "/admin/settings",
@@ -125,6 +130,19 @@ export default [
                     breadcrumb: "mail",
                 },
             },
+
+            {
+                path: "printer",
+                component: PrinterSettingComponent,
+                name: "admin.settings.printer",
+                meta: {
+                    isFrontend: false,
+                    auth: true,
+                    permissionUrl: "settings",
+                    breadcrumb: "mail",
+                },
+            },
+
             {
                 path: "order-setup",
                 component: OrderSetupComponent,
@@ -193,7 +211,6 @@ export default [
                 },
                 children: [
                     {
-
                         path: "list",
                         component: AnalyticListComponent,
                         name: "admin.settings.analytic.list",
@@ -215,7 +232,7 @@ export default [
                             breadcrumb: "view",
                         },
                     },
-                ]
+                ],
             },
             {
                 path: "theme",
@@ -237,7 +254,7 @@ export default [
                     auth: true,
                     permissionUrl: "settings",
                     breadcrumb: "time_slots",
-                }
+                },
             },
             {
                 path: "sliders",
@@ -525,7 +542,7 @@ export default [
                     auth: true,
                     permissionUrl: "settings",
                     breadcrumb: "license",
-                }
+                },
             },
             {
                 path: "notification-alert",
@@ -536,7 +553,7 @@ export default [
                     auth: true,
                     permissionUrl: "settings",
                     breadcrumb: "notification_alert",
-                }
+                },
             },
             {
                 path: "kiosk-machines",

@@ -32,6 +32,7 @@
                     <tr class="db-table-head-tr">
                         <th class="db-table-head-th"><i class="lab lab-list"></i></th>
                         <th class="db-table-head-th">{{ $t('label.name') }}</th>
+                        <th class="db-table-head-th">Parent Category</th>
                         <th class="db-table-head-th">{{ $t('label.status') }}</th>
                         <th class="db-table-head-th">{{ $t('label.action') }}</th>
                     </tr>
@@ -40,6 +41,7 @@
                     <tr class="db-table-body-tr" v-for="itemCategory in itemCategories" :key="itemCategory">
                         <td class="db-table-body-td"><i class="lab lab-move cursor-move drag-handle"></i></td>
                         <td class="db-table-body-td">{{ itemCategory.name }}</td>
+                        <td class="db-table-body-td">{{ itemCategory.parent_name ?? '—' }}</td>
                         <td class="db-table-body-td">
                             <span :class="statusClass(itemCategory.status)">
                                 {{ enums.statusEnumArray[itemCategory.status] }}
@@ -135,6 +137,7 @@ export default {
             },
             props: {
                 form: {
+                    parent_id: null, // extra
                     name: "",
                     status: statusEnum.ACTIVE,
                     description: ""
@@ -190,7 +193,8 @@ export default {
             this.props.form = {
                 name: itemCategory.name,
                 status: itemCategory.status,
-                description: itemCategory.description
+                description: itemCategory.description,
+                parent_id: itemCategory.parent_id // extra
             };
             this.loading.isActive = false;
         },

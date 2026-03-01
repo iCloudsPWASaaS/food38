@@ -312,7 +312,10 @@ export default {
         }).catch((err) => {
             this.loading.isActive = false;
         });
-        this.$store.dispatch('tax/lists', this.taxProps.search).then(res => {
+        this.$store.dispatch('tax/lists', {
+            ...this.categoryProps.search,
+            paginate: 0 //extra
+        }).then(res => {
             this.loading.isActive = false;
         }).catch((err) => {
             this.loading.isActive = false;
@@ -394,8 +397,13 @@ export default {
                 item_type: item.item_type,
                 tax_id: item.tax_id,
                 item_category_id: item.item_category_id,
+                item_sub_category_id: item.item_sub_category_id ?? null, //extra
                 status: item.status,
             };
+            this.$nextTick(() => { //extra
+                    this.props.form.item_category_id = item.item_category_id;
+                    this.props.form.item_sub_category_id = item.item_sub_category_id ?? null;
+                });
         },
         destroy: function (id) {
             appService.destroyConfirmation().then((res) => {

@@ -32,5 +32,10 @@ AppServiceProvider extends ServiceProvider
         if(config('app.env') !== 'local') {
             URL::forceScheme('https');
         }
+
+        $root = request()->root();
+        if ($root !== 'http://localhost' && $root !== 'http://127.0.0.1') {
+            $this->app['url']->forceRootUrl($root);
+        }
     }
 }

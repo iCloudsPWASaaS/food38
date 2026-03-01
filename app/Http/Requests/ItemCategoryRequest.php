@@ -25,6 +25,7 @@ class ItemCategoryRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'parent_id'   => ['nullable', 'integer'],  //extra
             'name'        => [
                 'required',
                 'string',

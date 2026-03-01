@@ -22,7 +22,11 @@ class ItemCategoryResource extends JsonResource
             'description' => $this->description === null ? '' : $this->description,
             'status'      => $this->status,
             'thumb'       => $this->thumb,
-            'cover'       => $this->cover
+            'cover'       => $this->cover,
+
+            //extra
+            'parent_id'   => $this->parent_id, 
+            'parent_name' => $this->parent?->name,
         ];
     }
 }

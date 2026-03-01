@@ -1,6 +1,6 @@
 php artisan media-library:regenerate
 php artisan media-library:regenerate --ids=73
-just need remebmer for image ite id will be media_id and then media table id will be th folder name in which php artisan media-library:regenerate
+just need remebmer for image - it's id will be media_id and then media table id will be th folder name in which php artisan media-library:regenerate
 will generate conversions
 
 --------------------
@@ -282,3 +282,22 @@ formatTime: function (timestamp) {
 closeHoldOrdersModal: function() {
     appService.modalHide('#holdOrdersModal');
 },
+
+
+-------------------------added
+admin.settings.printer
+F:\MyProjects2025\foodking32\main38\resources\js\components\admin\settings\PrinterSettingComponent.vue
+
+sub categories -
+ItemCategory.php
+ItemCategoryRequest.php
+ItemCategoryResource.php
+ItemCategoryCreateComponent.vue
+ItemCategoryListComponent.vue
+Item.php
+ItemRequest.php
+ItemResource.php
+SimpleItemResource.php
+ItemService.php
+ItemCreateComponent.vue
+ItemListComponent.vue

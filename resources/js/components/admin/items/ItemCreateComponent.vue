@@ -27,14 +27,36 @@
                     <div class="form-col-12 sm:form-col-6">
                         <label for="item_category_id" class="db-field-title required">{{ $t("label.category") }}</label>
                         <vue-select class="db-field-control f-b-custom-select" id="item_category_id"
-                            v-bind:class="errors.item_category_id ? 'invalid' : ''"
-                            v-model="props.form.item_category_id" :options="itemCategories" label-by="name"
-                            value-by="id" :closeOnSelect="true" :searchable="true" :clearOnClose="true" placeholder="--"
-                            search-placeholder="--" />
+                        v-bind:class="errors.item_category_id ? 'invalid' : ''"
+                        v-model="props.form.item_category_id"
+                        :options="parentCategories"
+                        label-by="name"
+                        value-by="id"
+                        :closeOnSelect="true"
+                        :searchable="true"
+                        :clearOnClose="true"
+                        placeholder="--"
+                        search-placeholder="--"
+                        @update:modelValue="onCategoryChange" />
                         <small class="db-field-alert" v-if="errors.item_category_id">{{
                             errors.item_category_id[0]
                             }}</small>
-                    </div>
+                    </div> <!-- extra -->
+
+                    <div class="form-col-12 sm:form-col-6" v-if="subCategories.length > 0">
+                        <label for="item_sub_category_id" class="db-field-title">Sub Category</label>
+                        <vue-select class="db-field-control f-b-custom-select" id="item_sub_category_id"
+                            :key="props.form.item_category_id"
+                            v-model="props.form.item_sub_category_id"
+                            :options="subCategories"
+                            label-by="name"
+                            value-by="id"
+                            :closeOnSelect="true"
+                            :searchable="true"
+                            :clearOnClose="true"
+                            placeholder="-- None --"
+                            search-placeholder="--" />
+                    </div> <!-- extra -->
 
                     <div class="form-col-12 sm:form-col-6">
                         <label for="tax_id" class="db-field-title">{{ $t("label.tax") }} ({{ $t("label.including")
@@ -197,19 +219,36 @@ export default {
         addButton: function () {
             return { title: this.$t('button.add_item') };
         },
-        itemCategories: function () {
+        /* itemCategories: function () {
             return this.$store.getters['itemCategory/lists'];
-        },
+        }, */ //extra
         taxes: function () {
             return this.$store.getters['tax/lists'];
-        }
+        },
+
+        //extra
+        parentCategories: function () {
+            const lists = this.$store.getters['itemCategory/lists'];
+            if (!lists || !Array.isArray(lists)) return [];
+            return lists.filter(c => c && !c.parent_id);
+        },
+        subCategories: function () {
+            const lists = this.$store.getters['itemCategory/lists'];
+            console.log('all lists:', lists);
+            console.log('item_category_id:', this.props.form.item_category_id);
+            if (!lists || !Array.isArray(lists) || !this.props.form.item_category_id) return [];
+            const subs = lists.filter(c => c && c.parent_id == this.props.form.item_category_id);
+            console.log('subCategories:', subs);
+            return subs;
+        },
     },
     mounted() {
         this.loading.isActive = true;
         this.$store.dispatch('itemCategory/lists', {
             order_column: 'sort',
             order_type: 'asc',
-            status: statusEnum.ACTIVE
+            status: statusEnum.ACTIVE,
+            paginate: 0, //extra
         });
         this.$store.dispatch('tax/lists', {
             order_column: 'id',
@@ -235,6 +274,7 @@ export default {
                 item_category_id: null,
                 tax_id: null,
                 status: statusEnum.ACTIVE,
+                item_sub_category_id: null, //extra
             };
             if (this.image) {
                 this.image = "";
@@ -254,6 +294,7 @@ export default {
                 item_category_id: null,
                 tax_id: null,
                 status: statusEnum.ACTIVE,
+                item_sub_category_id: null, //extra
             };
             if (this.image) {
                 this.image = "";
@@ -276,6 +317,11 @@ export default {
                 if (this.image) {
                     fd.append('image', this.image);
                 }
+
+                if (this.props.form.item_sub_category_id) { //extra
+                    fd.append('item_sub_category_id', this.props.form.item_sub_category_id);
+                }
+
                 const tempId = this.$store.getters['item/temp'].temp_id;
                 this.loading.isActive = true;
                 this.$store.dispatch('item/save', {
@@ -295,6 +341,7 @@ export default {
                         item_category_id: null,
                         tax_id: null,
                         status: statusEnum.ACTIVE,
+                        item_sub_category_id: null, //extra
                     };
                     this.image = "";
                     this.errors = {};
@@ -312,7 +359,12 @@ export default {
                 this.loading.isActive = false;
                 alertService.error(err)
             }
-        }
+        },
+
+        //extra
+        onCategoryChange: function () {
+            this.props.form.item_sub_category_id = null;
+        },
     }
 }
 </script>

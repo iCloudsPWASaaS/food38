@@ -12,6 +12,19 @@
             <div class="modal-body">
                 <form @submit.prevent="save">
                     <div class="form-row">
+
+<!-- extra -->
+<div class="form-col-12">
+    <label for="parent_id" class="db-field-title">Parent Category</label>
+    <select v-model="props.form.parent_id" id="parent_id" class="db-field-control">
+        <option :value="null">— None (Top Level) —</option>
+        <option v-for="category in parentCategories" :key="category.id" :value="category.id">
+            {{ category.name }}
+        </option>
+    </select>
+</div>
+
+
                         <div class="form-col-12">
                             <label for="name" class="db-field-title required">{{ $t("label.name") }}</label>
                             <input v-model="props.form.name" v-bind:class="errors.name ? 'invalid' : ''" type="text"
@@ -107,7 +120,13 @@ export default {
     computed: {
         addButton: function () {
             return { title: this.$t('button.add_item_category') };
+        },
+        parentCategories() { //extra
+            return this.$store.getters['itemCategory/lists']; // top-level only
         }
+    },
+    mounted() {
+        this.$store.dispatch('itemCategory/lists'); // extra
     },
     methods: {
         changeImage: function (e) {
@@ -118,6 +137,7 @@ export default {
             this.$store.dispatch('itemCategory/reset').then().catch();
             this.errors = {};
             this.$props.props.form = {
+                parent_id: null, // extra
                 name: "",
                 description: "",
                 status: statusEnum.ACTIVE
@@ -134,6 +154,13 @@ export default {
                 fd.append('name', this.props.form.name);
                 fd.append('status', this.props.form.status);
                 fd.append('description', this.props.form.description);
+
+            if (this.props.form.parent_id) { //extra
+                fd.append('parent_id', this.props.form.parent_id);
+            } else {
+                fd.append('parent_id', '');  // send empty to clear it
+            }
+
                 if (this.image) {
                     fd.append('image', this.image);
                 }

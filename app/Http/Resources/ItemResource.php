@@ -55,7 +55,10 @@ class ItemResource extends JsonResource
                         return $offer;
                     }
                 })
-            )
+            ),
+            //extra
+            "item_sub_category_id" => $this->item_sub_category_id,
+            "sub_category_name"    => optional($this->subCategory)->name,
         ];
     }
 

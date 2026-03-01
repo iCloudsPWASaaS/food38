@@ -18,6 +18,12 @@
                 <i class="lab lab-branches text-sm"></i>
                 {{ $t("menu.branches") }}
             </router-link>
+            
+            <router-link :to="{ name: 'admin.settings.printer' }" class="db-tab-btn">
+                <i class="lab lab-kiosk text-sm"></i>
+                Printer & Caller ID
+            </router-link> 
+            
             <router-link :to="{ name: 'admin.settings.kioskMachines' }" class="db-tab-btn">
                 <i class="lab lab-kiosk text-sm"></i>
                 {{ $t("menu.kiosk_machines") }}

@@ -13,14 +13,16 @@ class ItemCategory extends Model implements HasMedia
     use InteractsWithMedia;
 
     protected $table = "item_categories";
-    protected $fillable = ['name', 'slug', 'description', 'status', 'sort'];
+    protected $fillable = ['name', 'slug', 'description', 'status', 'sort', 'parent_id']; //extra
     protected $casts = [
         'id'          => 'integer',
         'name'        => 'string',
         'slug'        => 'string',
         'description' => 'string',
         'status'      => 'integer',
-        'sort'        => 'integer'
+        'sort'        => 'integer',
+
+        'parent_id' => 'integer', //extra
     ];
 
     public function getThumbAttribute(): string
@@ -50,5 +52,16 @@ class ItemCategory extends Model implements HasMedia
     public function items(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(Item::class)->where(['status' => Status::ACTIVE]);
+    }
+
+    //extra sub categories
+    public function parent(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(ItemCategory::class, 'parent_id');
+    }
+
+    public function subCategories(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(ItemCategory::class, 'parent_id')->where('status', Status::ACTIVE)->orderBy('sort');
     }
 }
